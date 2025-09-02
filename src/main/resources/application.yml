@@ -1,0 +1,9 @@
+application:
+  kafka:
+    topic: "test-topic"
+
+spring:
+  kafka:
+    producer:
+      bootstrap-servers: "127.0.0.1:9092"
+      client-id: "test-producer"

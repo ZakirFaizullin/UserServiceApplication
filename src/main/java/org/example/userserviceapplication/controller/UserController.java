@@ -3,7 +3,9 @@ package org.example.userserviceapplication.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.userserviceapplication.dto.UserCreateRequest;
 import org.example.userserviceapplication.dto.UserDto;
+import org.example.userserviceapplication.model.StringValue;
 import org.example.userserviceapplication.model.User;
+import org.example.userserviceapplication.services.DataSenderKafka;
 import org.example.userserviceapplication.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +19,15 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final DataSenderKafka dataSenderKafka;
+    
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto createUser(@RequestBody UserCreateRequest request) {
-        return userService.createUser(request);
+        UserDto result = userService.createUser(request);
+        dataSenderKafka.sendMessage(new StringValue("created", request.getEmail()));
+        return result;
     }
 
     @GetMapping("/{id}")
@@ -42,6 +48,9 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        UserDto foundUser = userService.findUserById(id);
+        if (foundUser != null)
+            dataSenderKafka.sendMessage(new StringValue("deleted", foundUser.getEmail()));
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
